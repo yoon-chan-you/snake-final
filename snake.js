@@ -2,18 +2,30 @@ const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const box = 20;
 const canvasSize = 400;
-let snake = [{ x: 9 * box, y: 10 * box }];
-let direction = 'RIGHT'; // 기본 방향을 RIGHT로 설정
+// 뱀을 중앙에 길이 3으로 시작
+let snake = [
+  { x: 10 * box, y: 10 * box },
+  { x: 9 * box, y: 10 * box },
+  { x: 8 * box, y: 10 * box }
+];
+let direction = 'RIGHT';
 let food = spawnFood();
 let score = 0;
 let gameInterval;
 let isGameOver = false;
 
 function spawnFood() {
-  return {
-    x: Math.floor(Math.random() * (canvasSize / box)) * box,
-    y: Math.floor(Math.random() * (canvasSize / box)) * box
-  };
+  let newFood;
+  while (true) {
+    newFood = {
+      x: Math.floor(Math.random() * (canvasSize / box)) * box,
+      y: Math.floor(Math.random() * (canvasSize / box)) * box
+    };
+    // food가 뱀과 겹치지 않게
+    let overlap = snake.some(segment => segment.x === newFood.x && segment.y === newFood.y);
+    if (!overlap) break;
+  }
+  return newFood;
 }
 
 document.addEventListener('keydown', (e) => {
