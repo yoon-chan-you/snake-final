@@ -1,6 +1,6 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-const box = 20; // box 크기를 20으로 줄여 공간을 더 촘촘하게
+const box = 20;
 const canvasWidth = 900;
 const canvasHeight = 600;
 
@@ -10,22 +10,27 @@ let snake = [
   { x: 13 * box, y: 10 * box }
 ];
 let direction = 'RIGHT';
-let food = spawnFood();
+let foods = [];
+const FOOD_COUNT = 5;
 let score = 0;
+let life = 5;
 let gameInterval;
 let isGameOver = false;
 
+const appleImg = new window.Image();
+appleImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><ellipse cx="16" cy="20" rx="11" ry="10" fill="%23ff2d2d"/><ellipse cx="16" cy="14" rx="6" ry="4" fill="%23fff" opacity="0.15"/><rect x="14.5" y="6" width="3" height="7" rx="1.5" fill="%233d2c13"/><path d="M16 6 Q17 2 21 4" stroke="%23080" stroke-width="2" fill="none"/></svg>';
+
 function spawnFood() {
-  let newFood;
-  while (true) {
-    newFood = {
+  let arr = [];
+  while (arr.length < FOOD_COUNT) {
+    let newFood = {
       x: Math.floor(Math.random() * (canvasWidth / box)) * box,
       y: Math.floor(Math.random() * (canvasHeight / box)) * box
     };
-    let overlap = snake.some(segment => segment.x === newFood.x && segment.y === newFood.y);
-    if (!overlap) break;
+    let overlap = snake.some(seg => seg.x === newFood.x && seg.y === newFood.y) || arr.some(f => f.x === newFood.x && f.y === newFood.y);
+    if (!overlap) arr.push(newFood);
   }
-  return newFood;
+  return arr;
 }
 
 document.addEventListener('keydown', (e) => {
@@ -38,24 +43,19 @@ document.addEventListener('keydown', (e) => {
 
 function drawCar(x, y, isHead) {
   if (isHead) {
-    // SVG 자동차 이미지 그리기 (간단한 형태)
     ctx.save();
     ctx.translate(x + box / 2, y + box / 2);
     ctx.rotate(direction === 'UP' ? -Math.PI/2 : direction === 'DOWN' ? Math.PI/2 : direction === 'LEFT' ? Math.PI : 0);
     ctx.translate(-box / 2, -box / 2);
-    // 차체
     ctx.fillStyle = '#ff3b3b';
     ctx.fillRect(0, 4, box, box - 8);
-    // 창문
     ctx.fillStyle = '#fff';
     ctx.fillRect(box * 0.2, box * 0.2, box * 0.6, box * 0.3);
-    // 바퀴
     ctx.fillStyle = '#222';
     ctx.fillRect(2, box - 4, box * 0.3, 4);
     ctx.fillRect(box - box * 0.3 - 2, box - 4, box * 0.3, 4);
     ctx.restore();
   } else {
-    // 몸통은 파란색
     ctx.fillStyle = '#4fc3f7';
     ctx.fillRect(x, y, box, box);
   }
@@ -67,15 +67,10 @@ function draw() {
   for (let i = 0; i < snake.length; i++) {
     drawCar(snake[i].x, snake[i].y, i === 0);
   }
-  // 먹이(연료) 그리기
-  ctx.beginPath();
-  ctx.arc(food.x + box / 2, food.y + box / 2, box / 2.5, 0, Math.PI * 2);
-  ctx.fillStyle = '#ffd700';
-  ctx.shadowColor = '#fff';
-  ctx.shadowBlur = 10;
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.closePath();
+  // 사과 5개 그리기
+  foods.forEach(food => {
+    ctx.drawImage(appleImg, food.x + 2, food.y + 2, box - 4, box - 4);
+  });
 
   // 자동차 이동
   let headX = snake[0].x;
@@ -90,29 +85,71 @@ function draw() {
     headX < 0 || headX >= canvasWidth ||
     headY < 0 || headY >= canvasHeight
   ) {
-    gameOver();
+    loseLife();
     return;
   }
 
   // 자기 몸 충돌 체크
   for (let i = 0; i < snake.length; i++) {
     if (headX === snake[i].x && headY === snake[i].y) {
-      gameOver();
+      loseLife();
       return;
     }
   }
 
-  // 먹이 먹었는지 체크
-  if (headX === food.x && headY === food.y) {
-    score++;
-    document.getElementById('score').textContent = `점수: ${score}`;
-    food = spawnFood();
+  // 사과 먹었는지 체크
+  let ate = false;
+  for (let i = 0; i < foods.length; i++) {
+    if (headX === foods[i].x && headY === foods[i].y) {
+      score++;
+      document.getElementById('score').textContent = `점수: ${score}`;
+      foods.splice(i, 1);
+      ate = true;
+      break;
+    }
+  }
+  if (ate) {
+    // 사과가 5개 미만이면 새로 추가
+    while (foods.length < FOOD_COUNT) {
+      let newFood;
+      while (true) {
+        newFood = {
+          x: Math.floor(Math.random() * (canvasWidth / box)) * box,
+          y: Math.floor(Math.random() * (canvasHeight / box)) * box
+        };
+        let overlap = snake.some(seg => seg.x === newFood.x && seg.y === newFood.y) || foods.some(f => f.x === newFood.x && f.y === newFood.y);
+        if (!overlap) break;
+      }
+      foods.push(newFood);
+    }
+    // 꼬리 유지(길이 증가)
   } else {
     snake.pop();
   }
 
   // 머리 추가
   snake.unshift({ x: headX, y: headY });
+}
+
+function loseLife() {
+  life--;
+  updateLifeUI();
+  if (life > 0) {
+    // 뱀 위치/길이 초기화, 방향 초기화
+    snake = [
+      { x: 15 * box, y: 10 * box },
+      { x: 14 * box, y: 10 * box },
+      { x: 13 * box, y: 10 * box }
+    ];
+    direction = 'RIGHT';
+  } else {
+    gameOver();
+  }
+}
+
+function updateLifeUI() {
+  const lifeDiv = document.getElementById('life');
+  lifeDiv.textContent = '목숨: ' + '❤️'.repeat(life) + '♡'.repeat(5 - life);
 }
 
 function gameOver() {
@@ -123,4 +160,8 @@ function gameOver() {
   }, 100);
 }
 
-gameInterval = setInterval(draw, 70);
+appleImg.onload = () => {
+  foods = spawnFood();
+  updateLifeUI();
+  gameInterval = setInterval(draw, 70);
+};
