@@ -17,8 +17,9 @@ let life = 5;
 let gameInterval;
 let isGameOver = false;
 
+// 명확한 사과 SVG(base64 인코딩, 투명 배경)
 const appleImg = new window.Image();
-appleImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><ellipse cx="16" cy="20" rx="11" ry="10" fill="%23ff2d2d"/><ellipse cx="16" cy="14" rx="6" ry="4" fill="%23fff" opacity="0.15"/><rect x="14.5" y="6" width="3" height="7" rx="1.5" fill="%233d2c13"/><path d="M16 6 Q17 2 21 4" stroke="%23080" stroke-width="2" fill="none"/></svg>';
+appleImg.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZWxsaXBzZSBjeD0iMTYiIGN5PSIyMCIgcng9IjExIiByeT0iMTAiIGZpbGw9IiNmZjJkMmQiLz48ZWxsaXBzZSBjeD0iMTYiIGN5PSIxNCIgcng9IjYiIHJ5PSI0IiBmaWxsPSIjZmZmIiBvcGFjaXR5PSIwLjE1Ii8+PHJlY3QgeD0iMTQuNSIgeT0iNiIgd2lkdGg9IjMiIGhlaWdodD0iNyIgcng9IjEuNSIgZmlsbD0iIzNkMmMxMyIvPjxwYXRoIGQ9Ik0xNiA2IFEgMTcgMiAyMSA0IiBzdHJva2U9IiMwODgwMDAiIHN0cm9rZS13aWR0aD0iMiIgZmlsbD0ibm9uZSIvPjxjaXJjbGUgY3g9IjE5IiBjeT0iOSIgcj0iMiIgZmlsbD0iIzgwYzgwMCIvPjwvc3ZnPg==';
 
 function spawnFood() {
   let arr = [];
@@ -109,7 +110,6 @@ function draw() {
     }
   }
   if (ate) {
-    // 사과가 5개 미만이면 새로 추가
     while (foods.length < FOOD_COUNT) {
       let newFood;
       while (true) {
@@ -122,7 +122,6 @@ function draw() {
       }
       foods.push(newFood);
     }
-    // 꼬리 유지(길이 증가)
   } else {
     snake.pop();
   }
@@ -160,8 +159,11 @@ function gameOver() {
   }, 100);
 }
 
-appleImg.onload = () => {
+function startGame() {
   foods = spawnFood();
   updateLifeUI();
-  gameInterval = setInterval(draw, 70);
-};
+  if (gameInterval) clearInterval(gameInterval);
+  gameInterval = setInterval(draw, 120); // 속도 느리게
+}
+appleImg.onload = startGame;
+if (appleImg.complete) startGame();
