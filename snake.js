@@ -3,10 +3,11 @@ const ctx = canvas.getContext('2d');
 const box = 20;
 const canvasSize = 400;
 let snake = [{ x: 9 * box, y: 10 * box }];
-let direction = null;
+let direction = 'RIGHT'; // 기본 방향을 RIGHT로 설정
 let food = spawnFood();
 let score = 0;
 let gameInterval;
+let isGameOver = false;
 
 function spawnFood() {
   return {
@@ -16,6 +17,7 @@ function spawnFood() {
 }
 
 document.addEventListener('keydown', (e) => {
+  if (isGameOver) return;
   if (e.key === 'ArrowLeft' && direction !== 'RIGHT') direction = 'LEFT';
   else if (e.key === 'ArrowUp' && direction !== 'DOWN') direction = 'UP';
   else if (e.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
@@ -76,8 +78,10 @@ function draw() {
 
 function gameOver() {
   clearInterval(gameInterval);
-  alert('게임 오버! 점수: ' + score);
-  location.reload();
+  isGameOver = true;
+  setTimeout(() => {
+    alert('게임 오버! 점수: ' + score + '\n새로고침(F5)으로 다시 시작하세요.');
+  }, 100);
 }
 
 gameInterval = setInterval(draw, 120);
