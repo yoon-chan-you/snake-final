@@ -1,12 +1,14 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-const box = 20;
-const canvasSize = 400;
-// 뱀을 중앙에 길이 3으로 시작
+const box = 30;
+const canvasWidth = 900;
+const canvasHeight = 600;
+
+// 자동차(스네이크) 시작 위치와 길이
 let snake = [
-  { x: 10 * box, y: 10 * box },
-  { x: 9 * box, y: 10 * box },
-  { x: 8 * box, y: 10 * box }
+  { x: 15 * box, y: 10 * box },
+  { x: 14 * box, y: 10 * box },
+  { x: 13 * box, y: 10 * box }
 ];
 let direction = 'RIGHT';
 let food = spawnFood();
@@ -18,10 +20,10 @@ function spawnFood() {
   let newFood;
   while (true) {
     newFood = {
-      x: Math.floor(Math.random() * (canvasSize / box)) * box,
-      y: Math.floor(Math.random() * (canvasSize / box)) * box
+      x: Math.floor(Math.random() * (canvasWidth / box)) * box,
+      y: Math.floor(Math.random() * (canvasHeight / box)) * box
     };
-    // food가 뱀과 겹치지 않게
+    // food가 자동차와 겹치지 않게
     let overlap = snake.some(segment => segment.x === newFood.x && segment.y === newFood.y);
     if (!overlap) break;
   }
@@ -36,20 +38,38 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'ArrowDown' && direction !== 'UP') direction = 'DOWN';
 });
 
-function draw() {
-  ctx.clearRect(0, 0, canvasSize, canvasSize);
-  // Draw snake
-  for (let i = 0; i < snake.length; i++) {
-    ctx.fillStyle = i === 0 ? '#00ff00' : '#fff';
-    ctx.fillRect(snake[i].x, snake[i].y, box, box);
-    ctx.strokeStyle = '#222';
-    ctx.strokeRect(snake[i].x, snake[i].y, box, box);
+function drawCar(x, y, isHead) {
+  // 자동차 몸통
+  ctx.fillStyle = isHead ? '#ff3b3b' : '#4fc3f7';
+  ctx.fillRect(x, y, box, box);
+  // 자동차 창문
+  if (isHead) {
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(x + box * 0.2, y + box * 0.2, box * 0.6, box * 0.3);
   }
-  // Draw food
-  ctx.fillStyle = '#ff0000';
-  ctx.fillRect(food.x, food.y, box, box);
+  // 자동차 바퀴
+  ctx.fillStyle = '#222';
+  ctx.fillRect(x + 3, y + box - 6, box * 0.3, 5);
+  ctx.fillRect(x + box - box * 0.3 - 3, y + box - 6, box * 0.3, 5);
+}
 
-  // Move snake
+function draw() {
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+  // 자동차(스네이크) 그리기
+  for (let i = 0; i < snake.length; i++) {
+    drawCar(snake[i].x, snake[i].y, i === 0);
+  }
+  // 먹이(연료) 그리기
+  ctx.beginPath();
+  ctx.arc(food.x + box / 2, food.y + box / 2, box / 2.5, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffd700';
+  ctx.shadowColor = '#fff';
+  ctx.shadowBlur = 10;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.closePath();
+
+  // 자동차 이동
   let headX = snake[0].x;
   let headY = snake[0].y;
   if (direction === 'LEFT') headX -= box;
@@ -57,16 +77,16 @@ function draw() {
   if (direction === 'RIGHT') headX += box;
   if (direction === 'DOWN') headY += box;
 
-  // Check collision with wall
+  // 벽 충돌 체크
   if (
-    headX < 0 || headX >= canvasSize ||
-    headY < 0 || headY >= canvasSize
+    headX < 0 || headX >= canvasWidth ||
+    headY < 0 || headY >= canvasHeight
   ) {
     gameOver();
     return;
   }
 
-  // Check collision with self
+  // 자기 몸 충돌 체크
   for (let i = 0; i < snake.length; i++) {
     if (headX === snake[i].x && headY === snake[i].y) {
       gameOver();
@@ -74,17 +94,17 @@ function draw() {
     }
   }
 
-  // Check if food is eaten
+  // 먹이 먹었는지 체크
   if (headX === food.x && headY === food.y) {
     score++;
     document.getElementById('score').textContent = `점수: ${score}`;
     food = spawnFood();
-    // Don't remove tail (snake grows)
+    // 꼬리 유지(길이 증가)
   } else {
     snake.pop();
   }
 
-  // Add new head
+  // 머리 추가
   snake.unshift({ x: headX, y: headY });
 }
 
@@ -96,4 +116,4 @@ function gameOver() {
   }, 100);
 }
 
-gameInterval = setInterval(draw, 120);
+gameInterval = setInterval(draw, 90);
