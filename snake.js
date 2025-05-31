@@ -1,10 +1,9 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-const box = 30;
+const box = 20; // box 크기를 20으로 줄여 공간을 더 촘촘하게
 const canvasWidth = 900;
 const canvasHeight = 600;
 
-// 자동차(스네이크) 시작 위치와 길이
 let snake = [
   { x: 15 * box, y: 10 * box },
   { x: 14 * box, y: 10 * box },
@@ -23,7 +22,6 @@ function spawnFood() {
       x: Math.floor(Math.random() * (canvasWidth / box)) * box,
       y: Math.floor(Math.random() * (canvasHeight / box)) * box
     };
-    // food가 자동차와 겹치지 않게
     let overlap = snake.some(segment => segment.x === newFood.x && segment.y === newFood.y);
     if (!overlap) break;
   }
@@ -39,18 +37,28 @@ document.addEventListener('keydown', (e) => {
 });
 
 function drawCar(x, y, isHead) {
-  // 자동차 몸통
-  ctx.fillStyle = isHead ? '#ff3b3b' : '#4fc3f7';
-  ctx.fillRect(x, y, box, box);
-  // 자동차 창문
   if (isHead) {
+    // SVG 자동차 이미지 그리기 (간단한 형태)
+    ctx.save();
+    ctx.translate(x + box / 2, y + box / 2);
+    ctx.rotate(direction === 'UP' ? -Math.PI/2 : direction === 'DOWN' ? Math.PI/2 : direction === 'LEFT' ? Math.PI : 0);
+    ctx.translate(-box / 2, -box / 2);
+    // 차체
+    ctx.fillStyle = '#ff3b3b';
+    ctx.fillRect(0, 4, box, box - 8);
+    // 창문
     ctx.fillStyle = '#fff';
-    ctx.fillRect(x + box * 0.2, y + box * 0.2, box * 0.6, box * 0.3);
+    ctx.fillRect(box * 0.2, box * 0.2, box * 0.6, box * 0.3);
+    // 바퀴
+    ctx.fillStyle = '#222';
+    ctx.fillRect(2, box - 4, box * 0.3, 4);
+    ctx.fillRect(box - box * 0.3 - 2, box - 4, box * 0.3, 4);
+    ctx.restore();
+  } else {
+    // 몸통은 파란색
+    ctx.fillStyle = '#4fc3f7';
+    ctx.fillRect(x, y, box, box);
   }
-  // 자동차 바퀴
-  ctx.fillStyle = '#222';
-  ctx.fillRect(x + 3, y + box - 6, box * 0.3, 5);
-  ctx.fillRect(x + box - box * 0.3 - 3, y + box - 6, box * 0.3, 5);
 }
 
 function draw() {
@@ -99,7 +107,6 @@ function draw() {
     score++;
     document.getElementById('score').textContent = `점수: ${score}`;
     food = spawnFood();
-    // 꼬리 유지(길이 증가)
   } else {
     snake.pop();
   }
@@ -116,4 +123,4 @@ function gameOver() {
   }, 100);
 }
 
-gameInterval = setInterval(draw, 90);
+gameInterval = setInterval(draw, 70);
